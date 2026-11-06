@@ -1,0 +1,32 @@
+# Environment variables and secrets
+.env
+.env.*
+
+# Python virtual environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated datasets
+data/raw/
+data/bronze/
+data/silver/
+data/rejected/
+data/metadata/
+
+# Spark output
+spark-warehouse/
+metastore_db/
+
+# Logs
+*.log
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
