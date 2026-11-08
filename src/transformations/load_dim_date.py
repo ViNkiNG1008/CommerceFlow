@@ -11,14 +11,23 @@ from pyspark.sql.functions import (
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SILVER_DIR = Path.home() / "commerceflow-data" / "silver_spark"
+SILVER_DIR = PROJECT_ROOT / "data" / "silver_spark"
 
 load_dotenv(PROJECT_ROOT / ".env")
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
-POSTGRES_URL = "jdbc:postgresql://localhost:5432/commerceflow_spark_test"
+POSTGRES_HOST = os.getenv("COMMERCEFLOW_POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.getenv("COMMERCEFLOW_POSTGRES_PORT", "5432")
+POSTGRES_DB = os.getenv(
+    "COMMERCEFLOW_POSTGRES_DB",
+    "commerceflow_spark_test"
+)
+
+POSTGRES_URL = (
+    f"jdbc:postgresql://{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+)
 JDBC_JAR = "/usr/share/java/postgresql-42.7.10.jar"
 
 

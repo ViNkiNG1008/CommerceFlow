@@ -7,7 +7,8 @@ from pyspark.sql import SparkSession
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BRONZE_DIR = PROJECT_ROOT / "data" / "bronze"
-SILVER_DIR = Path.home() / "commerceflow-data" / "silver_spark"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SILVER_DIR = PROJECT_ROOT / "data" / "silver_spark"
 
 
 def create_spark_session():

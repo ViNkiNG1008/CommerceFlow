@@ -14,39 +14,38 @@ BRONZE_DIR = PROJECT_ROOT / "data" / "bronze"
 def ingest_csv_to_bronze():
     """Convert all raw CSV files into Bronze Parquet files."""
 
-    # Create Bronze directory if it doesn't exist
     BRONZE_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Find all CSV files
-    csv_files = list(RAW_DIR.glob("*.csv"))
+    csv_files = sorted(RAW_DIR.glob("*.csv"))
 
     if not csv_files:
-        print(f"No CSV files found in {RAW_DIR}")
-        return
+        raise FileNotFoundError(f"No CSV files found in {RAW_DIR}")
 
     print(f"Found {len(csv_files)} CSV files.")
     print("-" * 50)
 
     ingestion_time = datetime.now(timezone.utc).isoformat()
 
+    successful_files = 0
+    failed_files = []
+
     for csv_file in csv_files:
         try:
-            # Read raw CSV
             df = pd.read_csv(csv_file)
 
             # Add ingestion metadata
             df["_source_file"] = csv_file.name
             df["_ingested_at"] = ingestion_time
 
-            # Create corresponding Parquet filename
             parquet_file = BRONZE_DIR / f"{csv_file.stem}.parquet"
 
-            # Write Parquet
             df.to_parquet(
                 parquet_file,
                 engine="pyarrow",
                 index=False
             )
+
+            successful_files += 1
 
             print(
                 f"SUCCESS: {csv_file.name} "
@@ -55,10 +54,19 @@ def ingest_csv_to_bronze():
             )
 
         except Exception as error:
+            failed_files.append(csv_file.name)
             print(f"FAILED: {csv_file.name} - {error}")
 
     print("-" * 50)
-    print("Bronze ingestion completed.")
+    print(f"Successful files: {successful_files}")
+    print(f"Failed files: {len(failed_files)}")
+
+    if failed_files:
+        raise RuntimeError(
+            f"Bronze ingestion failed for: {', '.join(failed_files)}"
+        )
+
+    print("Bronze ingestion completed successfully.")
 
 
 if __name__ == "__main__":

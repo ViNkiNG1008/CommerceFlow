@@ -1,8 +1,14 @@
+
 from pathlib import Path
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 
-SILVER_DIR = Path.home() / "commerceflow-data" / "silver_spark"
+
+# Project directories
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SILVER_DIR = PROJECT_ROOT / "data" / "silver_spark"
+
 
 # Business keys for each dataset
 DATASET_KEYS = {
@@ -16,66 +22,88 @@ DATASET_KEYS = {
     "product_category_name_translation": ["product_category_name"],
 }
 
-spark = (
-    SparkSession.builder
-    .appName("CommerceFlow-Silver-Quality")
-    .master("local[*]")
-    .getOrCreate()
-)
 
-try:
-    total_checks = 0
-    failed_checks = 0
+def run_silver_quality_checks():
 
-    print("\nCOMMERCEFLOW - SILVER DATA QUALITY")
-    print("=" * 65)
+    spark = (
+        SparkSession.builder
+        .appName("CommerceFlow-Silver-Quality")
+        .master("local[*]")
+        .getOrCreate()
+    )
 
-    for dataset_name, key_columns in DATASET_KEYS.items():
-        dataset_path = SILVER_DIR / dataset_name
-        df = spark.read.parquet(str(dataset_path))
+    try:
+        total_checks = 0
+        failed_checks = 0
 
-        print(f"\nDataset: {dataset_name}")
-        print("-" * 65)
+        print("\nCOMMERCEFLOW - SILVER DATA QUALITY")
+        print("=" * 65)
+        print(f"Silver directory: {SILVER_DIR}")
 
-        # Check 1: Null values in key columns
-        for column in key_columns:
-            null_count = df.filter(col(column).isNull()).count()
+        for dataset_name, key_columns in DATASET_KEYS.items():
+
+            dataset_path = SILVER_DIR / dataset_name
+
+            if not dataset_path.exists():
+                raise FileNotFoundError(
+                    f"Silver dataset not found: {dataset_path}"
+                )
+
+            df = spark.read.parquet(str(dataset_path))
+
+            print(f"\nDataset: {dataset_name}")
+            print("-" * 65)
+
+            # Check 1: Null values in key columns
+            for column in key_columns:
+
+                null_count = df.filter(
+                    col(column).isNull()
+                ).count()
+
+                total_checks += 1
+
+                if null_count == 0:
+                    print(f"PASS | {column}: No NULL values")
+                else:
+                    print(f"FAIL | {column}: {null_count} NULL values")
+                    failed_checks += 1
+
+            # Check 2: Uniqueness of business key
+            duplicate_count = (
+                df.groupBy(*key_columns)
+                .count()
+                .filter(col("count") > 1)
+                .count()
+            )
+
             total_checks += 1
 
-            if null_count == 0:
-                print(f"PASS | {column}: No NULL values")
+            if duplicate_count == 0:
+                print(f"PASS | Unique key: {key_columns}")
             else:
-                print(f"FAIL | {column}: {null_count} NULL values")
+                print(
+                    f"FAIL | {duplicate_count} duplicate key groups: "
+                    f"{key_columns}"
+                )
                 failed_checks += 1
 
-        # Check 2: Uniqueness of business key
-        duplicate_count = (
-            df.groupBy(*key_columns)
-            .count()
-            .filter(col("count") > 1)
-            .count()
-        )
+        print("\n" + "=" * 65)
+        print(f"Total checks: {total_checks}")
+        print(f"Passed: {total_checks - failed_checks}")
+        print(f"Failed: {failed_checks}")
 
-        total_checks += 1
-
-        if duplicate_count == 0:
-            print(f"PASS | Unique key: {key_columns}")
-        else:
-            print(
-                f"FAIL | {duplicate_count} duplicate key groups: "
-                f"{key_columns}"
+        if failed_checks > 0:
+            raise RuntimeError(
+                f"Silver quality validation failed: "
+                f"{failed_checks} checks failed."
             )
-            failed_checks += 1
 
-    print("\n" + "=" * 65)
-    print(f"Total checks: {total_checks}")
-    print(f"Passed: {total_checks - failed_checks}")
-    print(f"Failed: {failed_checks}")
+        print("\nRESULT: ALL QUALITY CHECKS PASSED")
 
-    if failed_checks == 0:
-        print("RESULT: ALL QUALITY CHECKS PASSED")
-    else:
-        print("RESULT: QUALITY ISSUES FOUND")
+    finally:
+        spark.stop()
 
-finally:
-    spark.stop()
+
+if __name__ == "__main__":
+    run_silver_quality_checks()

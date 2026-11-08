@@ -1,29 +1,31 @@
+
 # Environment variables and secrets
 .env
 .env.*
+!.env.example
+.venv-linux/
 
-# Python virtual environments
+# Python environments and cache
 .venv/
 venv/
 __pycache__/
 *.py[cod]
+.pytest_cache/
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Generated datasets
-data/raw/
-data/bronze/
-data/silver/
-data/rejected/
-data/metadata/
-
-# Spark output
+# Generated datasets and pipeline output
+data/
 spark-warehouse/
 metastore_db/
 
-# Logs
+# Airflow logs
+logs/
 *.log
+
+# Large dependencies
+docker/wheels/
 
 # IDE and OS files
 .vscode/

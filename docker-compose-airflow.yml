@@ -1,0 +1,91 @@
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  image: commerceflow-airflow:3.1.7
+
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db/${AIRFLOW_DB_NAME}
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "admin:admin"
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: "http://airflow-apiserver:8080/execution/"
+    AIRFLOW__CORE__INTERNAL_API_URL: "http://airflow-apiserver:8080"
+
+    # CommerceFlow PostgreSQL connection
+    COMMERCEFLOW_POSTGRES_HOST: commerceflow-postgres
+    COMMERCEFLOW_POSTGRES_PORT: "5432"
+    COMMERCEFLOW_POSTGRES_DB: commerceflow_spark_test
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./config:/opt/airflow/config
+    - ./src:/opt/airflow/src
+    - ./data:/opt/airflow/data
+    - ./sql:/opt/airflow/sql
+
+  networks:
+    - default
+    - commerceflow-network
+
+  user: "${AIRFLOW_UID}:0"
+
+  depends_on:
+    airflow-db:
+      condition: service_healthy
+
+services:
+  airflow-db:
+    image: postgres:16-alpine
+    container_name: commerceflow-airflow-db
+    environment:
+      POSTGRES_USER: ${AIRFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_DB_NAME}
+    volumes:
+      - airflow_metadata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_DB_USER} -d ${AIRFLOW_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: commerceflow-airflow-init
+    command: version
+    restart: "no"
+
+  airflow-apiserver:
+    <<: *airflow-common
+    container_name: commerceflow-airflow-apiserver
+    command: api-server
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: commerceflow-airflow-scheduler
+    command: scheduler
+    restart: unless-stopped
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    container_name: commerceflow-airflow-dag-processor
+    command: dag-processor
+    restart: unless-stopped
+
+volumes:
+  airflow_metadata:
+
+networks:
+  commerceflow-network:
+    external: true

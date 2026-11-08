@@ -1,4 +1,3 @@
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -15,6 +14,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+    networks:
+      - commerceflow-network
+
     restart: unless-stopped
 
     healthcheck:
@@ -25,3 +27,7 @@ services:
 
 volumes:
   postgres_data:
+
+networks:
+  commerceflow-network:
+    external: true
