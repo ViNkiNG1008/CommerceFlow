@@ -1,0 +1,59 @@
+// CommerceFlow DAX measures — create each via Modeling > New measure.
+
+Total Revenue =
+SUM ( 'gold v monthly_sales'[total_sales] )
+
+Total Orders =
+SUM ( 'gold v monthly_sales'[total_orders] )
+
+Average Order Value =
+DIVIDE ( [Total Revenue], [Total Orders] )
+
+Total Freight Revenue =
+SUM ( 'gold v monthly_sales'[freight_revenue] )
+
+Product Revenue =
+SUM ( 'gold v_product_performance'[product_sales] )
+
+Units Sold =
+SUM ( 'gold v_product_performance'[units_sold] )
+
+Average Product Price =
+DIVIDE ( [Product Revenue], [Units Sold] )
+
+Seller Revenue =
+SUM ( 'gold v_seller_performance'[product_sales] )
+
+Seller Orders =
+SUM ( 'gold v_seller_performance'[total_orders] )
+
+Payment Value =
+SUM ( 'gold v_payment_analysis'[total_payment_value] )
+
+Payment Transactions =
+SUM ( 'gold v_payment_analysis'[total_transactions] )
+
+Delivered Orders =
+SUM ( 'gold v_delivery_performance'[delivered_orders] )
+
+Late Deliveries =
+SUM ( 'gold v_delivery_performance'[late_deliveries] )
+
+Late Delivery Rate =
+DIVIDE ( [Late Deliveries], [Delivered Orders] )
+
+Total Reviews =
+SUM ( 'gold v_review_analysis'[total_reviews] )
+
+Weighted Average Review Score =
+DIVIDE (
+    SUMX (
+        'gold v_review_analysis',
+        'gold v_review_analysis'[avg_review_score]
+            * 'gold v_review_analysis'[total_reviews]
+    ),
+    [Total Reviews]
+)
+
+Customer Orders =
+SUM ( 'gold v_customer_sales'[total_orders] )

@@ -1,0 +1,19 @@
+{
+  "name": "CommerceFlow Modern",
+  "dataColors": [
+    "#18A6A6",
+    "#2563EB",
+    "#F59E0B",
+    "#8B5CF6",
+    "#EC4899",
+    "#14B8A6",
+    "#64748B",
+    "#EF4444"
+  ],
+  "background": "#F5F7FB",
+  "foreground": "#172033",
+  "tableAccent": "#18A6A6",
+  "good": "#16A34A",
+  "neutral": "#64748B",
+  "bad": "#DC2626"
+}
